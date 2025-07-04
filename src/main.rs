@@ -11,13 +11,17 @@ mod types {
 #[derive(Debug)]
 pub struct Runtime {
 	pub system: system::Pallet<Self>,
-	pub balances: balances::Pallet<types::AccountId, types::Balance>,
+	pub balances: balances::Pallet<Self>,
 }
 
 impl system::Config for Runtime {
 	type AccountId = types::AccountId;
 	type BlockNumber = types::BlockNumber;
 	type Nonce = types::Nonce;
+}
+
+impl balances::Config for Runtime {
+	type Balance = types::Balance;
 }
 
 impl Runtime {
