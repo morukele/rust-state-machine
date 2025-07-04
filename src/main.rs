@@ -18,7 +18,7 @@ mod types {
 
 pub enum RuntimeCall {
 	Balances(balances::Call<Runtime>),
-	ProofOfExistance(proof_of_existence::Call<Runtime>),
+	ProofOfExistence(proof_of_existence::Call<Runtime>),
 }
 
 #[derive(Debug)]
@@ -89,7 +89,7 @@ impl crate::support::Dispatch for Runtime {
 			RuntimeCall::Balances(call) => {
 				self.balances.dispatch(caller, call)?;
 			},
-			RuntimeCall::ProofOfExistance(call) => {
+			RuntimeCall::ProofOfExistence(call) => {
 				self.poe.dispatch(caller, call)?;
 			},
 		}
@@ -149,10 +149,48 @@ fn main() {
 		],
 	};
 
+	let block_3 = types::Block {
+		header: support::Header { block_number: 3 },
+		extrinsics: vec![
+			support::Extrinsic {
+				caller: alice.clone(),
+				call: RuntimeCall::ProofOfExistence(proof_of_existence::Call::CreateClaim {
+					claim: "Hello, world!",
+				}),
+			},
+			support::Extrinsic {
+				caller: bob.clone(),
+				call: RuntimeCall::ProofOfExistence(proof_of_existence::Call::CreateClaim {
+					claim: "I love you!",
+				}),
+			},
+		],
+	};
+
+	let block_4 = types::Block {
+		header: support::Header { block_number: 4 },
+		extrinsics: vec![
+			support::Extrinsic {
+				caller: alice,
+				call: RuntimeCall::ProofOfExistence(proof_of_existence::Call::RevokeClaim {
+					claim: "Hello, world!",
+				}),
+			},
+			support::Extrinsic {
+				caller: bob,
+				call: RuntimeCall::ProofOfExistence(proof_of_existence::Call::CreateClaim {
+					claim: "Hello, world!",
+				}),
+			},
+		],
+	};
+
 	// Execute the extrinsics which make up our block.
 	// If there are any errors, our system panics, since we should not execute invalid blocks
 	runtime.execute_block(block_1).expect("invalid block");
 	runtime.execute_block(block_2).expect("invalid block");
+	runtime.execute_block(block_3).expect("invalid block");
+	runtime.execute_block(block_4).expect("invalid block");
 
 	println!("{:#?}", runtime);
 }
