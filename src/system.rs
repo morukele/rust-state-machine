@@ -1,56 +1,62 @@
 use num::{One, Zero};
 
-use crate::types::{AccountId, BlockNumber, Nonce};
 use std::{collections::BTreeMap, ops::AddAssign};
+
+pub trait Config {
+	type AccountId: Ord + Clone;
+	type BlockNumber: Zero + One + AddAssign + Copy;
+	type Nonce: Zero + One + Copy;
+}
 
 /// This is the System Pallet.
 /// It handles low level state needed for your blockchain.
 #[derive(Debug)]
-pub struct Pallet<AccountId, BlockNumber, Nonce> {
+pub struct Pallet<T: Config> {
 	/// The current block number.
-	pub block_number: BlockNumber,
+	pub block_number: T::BlockNumber,
 	/// A map from an account to their nonce.
-	pub nonce: BTreeMap<AccountId, Nonce>,
+	pub nonce: BTreeMap<T::AccountId, T::Nonce>,
 }
 
-impl Pallet<AccountId, BlockNumber, Nonce>
-where
-	AccountId: Ord + Clone,
-	BlockNumber: Zero + One + AddAssign + Copy,
-	Nonce: Zero + One + Copy,
-{
+impl<T: Config> Pallet<T> {
 	/// Create a new instance of the System Pallet.
 	pub fn new() -> Self {
-		Pallet { block_number: BlockNumber::zero(), nonce: BTreeMap::new() }
+		Pallet { block_number: T::BlockNumber::zero(), nonce: BTreeMap::new() }
 	}
 
 	/// Get the current block number.
-	pub fn block_number(&self) -> u32 {
+	pub fn block_number(&self) -> T::BlockNumber {
 		self.block_number
 	}
 
 	// This function can be used to increment the block number.
 	// Increases the block number by one.
 	pub fn inc_block_number(&mut self) {
-		self.block_number += 1;
+		self.block_number += T::BlockNumber::one();
 	}
 
 	// Increment the nonce of an account. This helps us keep track of how many transactions each
 	// account has made.
-	pub fn inc_nonce(&mut self, who: &AccountId) {
-		let nonce = *self.nonce.get(who).unwrap_or(&0);
-		let new_nonce = nonce + 1;
+	pub fn inc_nonce(&mut self, who: &T::AccountId) {
+		let nonce: T::Nonce = *self.nonce.get(who).unwrap_or(&T::Nonce::zero());
+		let new_nonce = nonce + T::Nonce::one();
 		self.nonce.insert(who.clone(), new_nonce);
 	}
 }
 
 #[cfg(test)]
 mod tests {
-	use super::*;
+
+	struct TestConfig;
+	impl super::Config for TestConfig {
+		type AccountId = String;
+		type BlockNumber = u32;
+		type Nonce = u32;
+	}
 
 	#[test]
 	fn init_system() {
-		let mut system = Pallet::<String, u32, u32>::new();
+		let mut system = super::Pallet::<TestConfig>::new();
 		system.inc_block_number();
 		system.inc_nonce(&"alice".to_string());
 
