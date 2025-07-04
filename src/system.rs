@@ -1,19 +1,27 @@
-use std::collections::BTreeMap;
+use num::{One, Zero};
+
+use crate::types::{AccountId, BlockNumber, Nonce};
+use std::{collections::BTreeMap, ops::AddAssign};
 
 /// This is the System Pallet.
 /// It handles low level state needed for your blockchain.
 #[derive(Debug)]
-pub struct Pallet {
+pub struct Pallet<AccountId, BlockNumber, Nonce> {
 	/// The current block number.
-	pub block_number: u32,
+	pub block_number: BlockNumber,
 	/// A map from an account to their nonce.
-	pub nonce: BTreeMap<String, u32>,
+	pub nonce: BTreeMap<AccountId, Nonce>,
 }
 
-impl Pallet {
+impl Pallet<AccountId, BlockNumber, Nonce>
+where
+	AccountId: Ord + Clone,
+	BlockNumber: Zero + One + AddAssign + Copy,
+	Nonce: Zero + One + Copy,
+{
 	/// Create a new instance of the System Pallet.
 	pub fn new() -> Self {
-		Pallet { block_number: 0, nonce: BTreeMap::new() }
+		Pallet { block_number: BlockNumber::zero(), nonce: BTreeMap::new() }
 	}
 
 	/// Get the current block number.
@@ -29,7 +37,7 @@ impl Pallet {
 
 	// Increment the nonce of an account. This helps us keep track of how many transactions each
 	// account has made.
-	pub fn inc_nonce(&mut self, who: &String) {
+	pub fn inc_nonce(&mut self, who: &AccountId) {
 		let nonce = *self.nonce.get(who).unwrap_or(&0);
 		let new_nonce = nonce + 1;
 		self.nonce.insert(who.clone(), new_nonce);
@@ -42,7 +50,7 @@ mod tests {
 
 	#[test]
 	fn init_system() {
-		let mut system = Pallet::new();
+		let mut system = Pallet::<String, u32, u32>::new();
 		system.inc_block_number();
 		system.inc_nonce(&"alice".to_string());
 
